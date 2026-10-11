@@ -4,6 +4,7 @@ import java.util.List;
 
 import jakarta.validation.Valid;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,8 @@ import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioUpdateDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.service.UsuarioService;
 
+// Solo ADMIN: ALMACEN no tiene acceso al modulo de usuarios (ver cuadro de permisos del informe).
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {

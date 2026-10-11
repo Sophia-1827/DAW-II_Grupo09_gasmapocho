@@ -22,7 +22,6 @@ import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioUpdateDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.model.Rol;
 import pe.edu.cibertec.gasmapocho.msusuarios.model.Usuario;
 import pe.edu.cibertec.gasmapocho.msusuarios.repository.UsuarioRepository;
-import pe.edu.cibertec.gasmapocho.msusuarios.security.JwtService;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceTest {
@@ -32,9 +31,6 @@ class UsuarioServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private JwtService jwtService;
 
     @InjectMocks
     private UsuarioService usuarioService;

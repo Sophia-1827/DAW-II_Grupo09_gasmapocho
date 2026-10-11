@@ -27,8 +27,13 @@ Queda escuchando en `http://localhost:8081`.
 
 Probado end-to-end (login válido, login con clave incorrecta → 401, crear, listar, actualizar, eliminar). 5/5 pruebas unitarias de la capa de servicio (JUnit + Mockito) pasando: `./mvnw test`.
 
+## Seguridad (actualizado, igual al patrón de "tema 4" del profesor)
+- Login real vía `AuthenticationManager` + `DaoAuthenticationProvider` + `UserDetailsServiceImpl` (no validación manual).
+- Filtro `FiltroJwtAuth` (`OncePerRequestFilter`) valida el JWT en cada request y llena el `SecurityContextHolder`.
+- `/api/usuarios/**` requiere rol `ADMIN` (`@PreAuthorize`) — ALMACEN recibe 403, igual que indica el cuadro de permisos del informe.
+- Probado en vivo: login malo → 401, sin token → 403, token ALMACEN → 403, token ADMIN → 200/404 reales según corresponda.
+
 ## Pendiente para la versión final (no bloquea el avance)
 - Reemplazar H2 por PostgreSQL en la nube (Aiven/Supabase) en `application.properties`.
 - Registrar el servicio en Eureka y exponerlo a través del Gateway.
-- Proteger `/api/usuarios/**` por rol usando el JWT (ahora mismo `SecurityConfig` deja todo abierto para poder probarlo rápido con Postman sin pelear con el token).
 - Notas al pie pendientes en el informe (ver conversación aparte).

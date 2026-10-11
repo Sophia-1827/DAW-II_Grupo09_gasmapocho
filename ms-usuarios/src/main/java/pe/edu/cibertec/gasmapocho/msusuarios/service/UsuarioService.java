@@ -7,27 +7,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import pe.edu.cibertec.gasmapocho.msusuarios.dto.LoginRequestDTO;
-import pe.edu.cibertec.gasmapocho.msusuarios.dto.LoginResponseDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioCreateDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.dto.UsuarioUpdateDTO;
 import pe.edu.cibertec.gasmapocho.msusuarios.model.Usuario;
 import pe.edu.cibertec.gasmapocho.msusuarios.repository.UsuarioRepository;
-import pe.edu.cibertec.gasmapocho.msusuarios.security.JwtService;
 
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
     }
 
     public List<UsuarioDTO> listar() {
@@ -61,16 +55,6 @@ public class UsuarioService {
     public void eliminar(Long id) {
         Usuario usuario = buscarOLanzar(id);
         usuarioRepository.delete(usuario);
-    }
-
-    public LoginResponseDTO login(LoginRequestDTO request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales invalidas"));
-        if (!passwordEncoder.matches(request.password(), usuario.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales invalidas");
-        }
-        String token = jwtService.generarToken(usuario.getEmail(), usuario.getRol().name());
-        return new LoginResponseDTO(token, usuario.getNombre(), usuario.getRol());
     }
 
     private Usuario buscarOLanzar(Long id) {
