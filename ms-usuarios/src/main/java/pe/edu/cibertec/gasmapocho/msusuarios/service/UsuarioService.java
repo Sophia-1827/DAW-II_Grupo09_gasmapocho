@@ -49,6 +49,9 @@ public class UsuarioService {
         usuario.setNombre(request.nombre());
         usuario.setEmail(request.email());
         usuario.setRol(request.rol());
+        if (request.password() != null && !request.password().isBlank()) {
+            usuario.setPasswordHash(passwordEncoder.encode(request.password()));
+        }
         return toDTO(usuarioRepository.save(usuario));
     }
 

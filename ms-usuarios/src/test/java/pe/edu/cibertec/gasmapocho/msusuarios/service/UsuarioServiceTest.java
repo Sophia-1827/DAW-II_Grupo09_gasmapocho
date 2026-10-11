@@ -72,12 +72,25 @@ class UsuarioServiceTest {
         when(usuarioRepository.findById(5L)).thenReturn(Optional.of(existente));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UsuarioUpdateDTO request = new UsuarioUpdateDTO("Nombre Actualizado", "nuevo-email@gasmapocho.cl", Rol.ADMIN);
+        UsuarioUpdateDTO request = new UsuarioUpdateDTO("Nombre Actualizado", "nuevo-email@gasmapocho.cl", Rol.ADMIN, null);
         UsuarioDTO resultado = usuarioService.actualizar(5L, request);
 
         assertThat(resultado.nombre()).isEqualTo("Nombre Actualizado");
         assertThat(resultado.email()).isEqualTo("nuevo-email@gasmapocho.cl");
         assertThat(resultado.rol()).isEqualTo(Rol.ADMIN);
+    }
+
+    @Test
+    void actualizarCambiaElPasswordSoloSiVieneInformado() {
+        Usuario existente = new Usuario(6L, "Alguien", "alguien@gasmapocho.cl", "hash-viejo", Rol.ALMACEN);
+        when(usuarioRepository.findById(6L)).thenReturn(Optional.of(existente));
+        when(passwordEncoder.encode("NuevaClave123")).thenReturn("hash-nuevo");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioUpdateDTO request = new UsuarioUpdateDTO("Alguien", "alguien@gasmapocho.cl", Rol.ALMACEN, "NuevaClave123");
+        usuarioService.actualizar(6L, request);
+
+        assertThat(existente.getPasswordHash()).isEqualTo("hash-nuevo");
     }
 
     @Test
