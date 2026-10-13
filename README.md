@@ -19,10 +19,9 @@ Backend de microservicios del proyecto Gas Mapocho (Spring Boot 4.1.1, Spring Cl
 2. **PostgreSQL** instalado y corriendo en `localhost:5432`.
 3. **RabbitMQ** instalado y corriendo en `localhost:5672` (lo usan `ms-balones` y `ms-movimientos` para actualizar el stock de forma asíncrona cuando se registra un movimiento).
 
-## Configurar PostgreSQL (una sola vez, cada integrante en su propia PC)
+## Configurar PostgreSQL
 
-Cada quien tiene su propia copia local de la base — no es una base compartida entre el equipo (como ya pasaba con H2 antes).
-
+Cada quien tiene su propia copia local de la base — no es una base compartida.
 1. Instala PostgreSQL si no lo tienes: https://www.postgresql.org/download/ (durante la instalación te va a pedir una contraseña para el usuario `postgres`, anótala).
 2. Abre una terminal y conéctate como `postgres` (te va a pedir la contraseña que pusiste al instalar):
    ```bash
