@@ -39,6 +39,11 @@ public class BalonController {
         return balonService.obtener(id);
     }
 
+    @GetMapping("/codigo/{codigo}")
+    public BalonDTO obtenerPorCodigo(@PathVariable String codigo) {
+        return balonService.obtenerPorCodigo(codigo);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public BalonDTO crear(@Valid @RequestBody BalonRequestDTO request) {

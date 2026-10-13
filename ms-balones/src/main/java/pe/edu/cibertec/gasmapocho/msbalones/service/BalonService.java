@@ -28,6 +28,19 @@ public class BalonService {
         return toDTO(buscarOLanzar(id));
     }
 
+    public BalonDTO obtenerPorCodigo(String codigo) {
+        return toDTO(balonRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Balon no encontrado: " + codigo)));
+    }
+
+    // Aplica el delta de stock que llega del evento de movimientos (ENTRADA suma, SALIDA resta).
+    public void ajustarStock(String codigo, int delta) {
+        Balon balon = balonRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Balon no encontrado: " + codigo));
+        balon.setStock(Math.max(0, balon.getStock() + delta));
+        balonRepository.save(balon);
+    }
+
     public BalonDTO crear(BalonRequestDTO request) {
         if (balonRepository.existsByCodigo(request.codigo())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un balon con ese codigo");
