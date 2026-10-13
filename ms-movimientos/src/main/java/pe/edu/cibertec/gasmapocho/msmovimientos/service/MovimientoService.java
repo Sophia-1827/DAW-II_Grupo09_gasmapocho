@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import pe.edu.cibertec.gasmapocho.msmovimientos.client.BalonClient;
+import pe.edu.cibertec.gasmapocho.msmovimientos.client.BalonClienteResiliente;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.BalonDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
@@ -23,13 +23,13 @@ import feign.FeignException;
 public class MovimientoService {
 
     private final MovimientoRepository movimientoRepository;
-    private final BalonClient balonClient;
+    private final BalonClienteResiliente balonClienteResiliente;
     private final MovimientoPublicador publicador;
 
-    public MovimientoService(MovimientoRepository movimientoRepository, BalonClient balonClient,
+    public MovimientoService(MovimientoRepository movimientoRepository, BalonClienteResiliente balonClienteResiliente,
             MovimientoPublicador publicador) {
         this.movimientoRepository = movimientoRepository;
-        this.balonClient = balonClient;
+        this.balonClienteResiliente = balonClienteResiliente;
         this.publicador = publicador;
     }
 
@@ -67,11 +67,9 @@ public class MovimientoService {
 
     private BalonDTO buscarBalonOLanzar(String codigo) {
         try {
-            return balonClient.obtenerPorCodigo(codigo);
+            return balonClienteResiliente.obtenerPorCodigo(codigo);
         } catch (FeignException.NotFound e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Balon no encontrado: " + codigo);
-        } catch (FeignException e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "ms-balones no responde");
         }
     }
 

@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
-import pe.edu.cibertec.gasmapocho.msmovimientos.client.BalonClient;
+import pe.edu.cibertec.gasmapocho.msmovimientos.client.BalonClienteResiliente;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.BalonDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
@@ -31,7 +31,7 @@ class MovimientoServiceTest {
     private MovimientoRepository movimientoRepository;
 
     @Mock
-    private BalonClient balonClient;
+    private BalonClienteResiliente balonClienteResiliente;
 
     @Mock
     private MovimientoPublicador publicador;
@@ -54,7 +54,7 @@ class MovimientoServiceTest {
     @Test
     void registrarInsertaUnaEntradaYPublicaElEvento() {
         BalonDTO balon = new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 40, 10);
-        when(balonClient.obtenerPorCodigo("BAL-5")).thenReturn(balon);
+        when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
         when(movimientoRepository.save(any(Movimiento.class))).thenAnswer(inv -> {
             Movimiento m = inv.getArgument(0);
             if (m.getId() == null) {
@@ -75,7 +75,7 @@ class MovimientoServiceTest {
     @Test
     void registrarRechazaSalidaSinStockSuficiente() {
         BalonDTO balon = new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 3, 10);
-        when(balonClient.obtenerPorCodigo("BAL-5")).thenReturn(balon);
+        when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
 
         MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 5, "Juan", null);
 
@@ -86,7 +86,7 @@ class MovimientoServiceTest {
     @Test
     void registrarAceptaSalidaConStockSuficienteYPublicaElEvento() {
         BalonDTO balon = new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 10, 2);
-        when(balonClient.obtenerPorCodigo("BAL-5")).thenReturn(balon);
+        when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
         when(movimientoRepository.save(any(Movimiento.class))).thenAnswer(inv -> {
             Movimiento m = inv.getArgument(0);
             if (m.getId() == null) {

@@ -68,6 +68,16 @@ cd api-gateway && ./mvnw spring-boot:run        # al final, cuando los demas ya 
 
 Eureka tarda ~30 segundos en propagar un registro nuevo a los demás servicios, así que si algo da 503/500 justo después de arrancar, espera un poco y reintenta.
 
+## Correr todo con Docker (alternativa a instalar todo a mano)
+
+Hay un `docker-compose.yml` en la raíz que levanta los 6 microservicios + PostgreSQL + RabbitMQ con un solo comando, sin instalar nada más que Docker Desktop:
+
+```bash
+docker compose up --build
+```
+
+La primera vez tarda varios minutos (compila cada servicio con Maven dentro del contenedor). `api-gateway` queda en `http://localhost:8080` y `postgres`/`rabbitmq` quedan accesibles igual que si estuvieran instalados localmente. **Nota**: esto todavía no se probó en vivo en ningún equipo del grupo (Docker Desktop no arrancó en esta PC durante el desarrollo) — probarlo antes de depender de esto para la sustentación.
+
 ## Usuarios de prueba (sembrados automáticamente)
 
 | email | password | rol |
