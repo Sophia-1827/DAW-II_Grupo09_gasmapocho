@@ -3,7 +3,7 @@ services:
     image: postgres:18
     environment:
       POSTGRES_USER: gasmapocho
-      POSTGRES_PASSWORD: GasMapocho2026Seguro
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -37,7 +37,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gasmapocho_usuarios
       DB_USER: gasmapocho
-      DB_PASSWORD: GasMapocho2026Seguro
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
     depends_on:
       eureka-server:
         condition: service_started
@@ -50,7 +50,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gasmapocho_balones
       DB_USER: gasmapocho
-      DB_PASSWORD: GasMapocho2026Seguro
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       eureka-server:
@@ -66,7 +66,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/gasmapocho_movimientos
       DB_USER: gasmapocho
-      DB_PASSWORD: GasMapocho2026Seguro
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
       SPRING_RABBITMQ_HOST: rabbitmq
     depends_on:
       eureka-server:

@@ -5,3 +5,7 @@ target/
 .DS_Store
 .vscode/
 *.log
+
+# Credenciales locales: nunca se suben
+.env
+application-local.properties

@@ -72,7 +72,10 @@ Eureka tarda ~30 segundos en propagar un registro nuevo a los demás servicios, 
 
 Hay un `docker-compose.yml` en la raíz que levanta los 6 microservicios + PostgreSQL + RabbitMQ con un solo comando, sin instalar nada más que Docker Desktop:
 
+Antes crea tu archivo `.env` a partir de la plantilla y pon tu propia contraseña (el `.env` no se sube a GitHub):
+
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
