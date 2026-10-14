@@ -87,3 +87,21 @@ La primera vez tarda varios minutos (compila cada servicio con Maven dentro del 
 |---|---|---|
 | admin@gasmapocho.cl | Admin123 | ADMIN |
 | almacen@gasmapocho.cl | Almacen123 | ALMACEN |
+
+## Datos de ejemplo
+
+Además de los usuarios, la primera vez que corre cada servicio se siembran:
+
+- `ms-balones`: 4 balones (BAL-5, BAL-11, BAL-15, BAL-45 con stock 40/30/20/10) y 3 proveedores.
+- `ms-movimientos`: 3 clientes y 12 movimientos de los últimos días (compras a proveedor, ventas, y uno de cada estado).
+
+Los seeders solo escriben si la tabla está vacía. Para volver a este estado inicial (por ejemplo después de probar), con los servicios apagados, ejecuta en PostgreSQL:
+
+```sql
+-- en la base gasmapocho_movimientos
+TRUNCATE movimiento, cliente RESTART IDENTITY;
+-- en la base gasmapocho_balones
+UPDATE balon SET stock = CASE codigo WHEN 'BAL-5' THEN 40 WHEN 'BAL-11' THEN 30 WHEN 'BAL-15' THEN 20 WHEN 'BAL-45' THEN 10 END;
+```
+
+y vuelve a levantar `ms-movimientos`.
