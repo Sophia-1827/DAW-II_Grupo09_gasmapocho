@@ -11,5 +11,6 @@ public record MovimientoRequestDTO(
         @NotBlank String balonCodigo,
         @NotNull @Min(1) Integer cantidad,
         @NotBlank String responsable,
-        String observacion) {
+        String observacion,
+        Long clienteId) {
 }

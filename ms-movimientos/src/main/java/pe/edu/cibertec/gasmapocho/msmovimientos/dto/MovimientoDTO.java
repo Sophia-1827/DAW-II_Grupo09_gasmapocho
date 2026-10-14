@@ -16,5 +16,8 @@ public record MovimientoDTO(
         String observacion,
         LocalDateTime fecha,
         Long proveedorId,
-        String proveedorNombre) {
+        String proveedorNombre,
+        Long clienteId,
+        String clienteNombre,
+        String clienteDireccion) {
 }

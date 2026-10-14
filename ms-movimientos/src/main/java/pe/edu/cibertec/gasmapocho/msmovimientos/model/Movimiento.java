@@ -61,4 +61,15 @@ public class Movimiento {
 
     @Column(name = "proveedor_nombre", length = 100)
     private String proveedorNombre;
+
+    // Solo las ventas (SALIDA) con cliente los llenan. Se copian al registrar para que el historial
+    // conserve lo que se vendio aunque luego se edite o desactive el cliente.
+    @Column(name = "cliente_id")
+    private Long clienteId;
+
+    @Column(name = "cliente_nombre", length = 100)
+    private String clienteNombre;
+
+    @Column(name = "cliente_direccion", length = 150)
+    private String clienteDireccion;
 }

@@ -26,8 +26,10 @@ import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.ProveedorDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.messaging.MovimientoPublicador;
+import pe.edu.cibertec.gasmapocho.msmovimientos.model.Cliente;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.Movimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.TipoMovimiento;
+import pe.edu.cibertec.gasmapocho.msmovimientos.repository.ClienteRepository;
 import pe.edu.cibertec.gasmapocho.msmovimientos.repository.MovimientoRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +37,9 @@ class MovimientoServiceTest {
 
     @Mock
     private MovimientoRepository movimientoRepository;
+
+    @Mock
+    private ClienteRepository clienteRepository;
 
     @Mock
     private BalonClienteResiliente balonClienteResiliente;
@@ -51,7 +56,7 @@ class MovimientoServiceTest {
     @Test
     void listarDevuelveTodosLosMovimientosOrdenados() {
         Movimiento m1 = new Movimiento(1L, "MOV-00001", TipoMovimiento.ENTRADA, "BAL-5", "Balon 5 kg", 10, 14500.0,
-                "Juan", null, LocalDateTime.now(), null, null);
+                "Juan", null, LocalDateTime.now(), null, null, null, null, null);
         when(movimientoRepository.findAllByOrderByFechaDesc()).thenReturn(List.of(m1));
 
         List<MovimientoDTO> resultado = movimientoService.listar();
@@ -66,7 +71,7 @@ class MovimientoServiceTest {
         when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
         simularGuardado(7L);
 
-        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.ENTRADA, "BAL-5", 10, "Juan", null);
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.ENTRADA, "BAL-5", 10, "Juan", null, null);
         MovimientoDTO resultado = movimientoService.registrar(request);
 
         assertThat(resultado.folio()).isEqualTo("MOV-00007");
@@ -80,7 +85,7 @@ class MovimientoServiceTest {
         BalonDTO balon = new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 3, 10);
         when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
 
-        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 5, "Juan", null);
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 5, "Juan", null, null);
 
         assertThrows(ResponseStatusException.class, () -> movimientoService.registrar(request));
     }
@@ -91,7 +96,7 @@ class MovimientoServiceTest {
         when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
         simularGuardado(3L);
 
-        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 5, "Ana", "Venta");
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 5, "Ana", "Venta", null);
         MovimientoDTO resultado = movimientoService.registrar(request);
 
         assertThat(resultado.tipo()).isEqualTo(TipoMovimiento.SALIDA);
@@ -148,7 +153,7 @@ class MovimientoServiceTest {
     @Test
     void listarComprasFiltraPorProveedorCuandoSeIndica() {
         Movimiento compra = new Movimiento(4L, "MOV-00004", TipoMovimiento.ENTRADA, "BAL-5", "Balon 5 kg", 10,
-                14000.0, "Ana", null, LocalDateTime.now(), 2L, "Pacifico Ltda.");
+                14000.0, "Ana", null, LocalDateTime.now(), 2L, "Pacifico Ltda.", null, null, null);
         when(movimientoRepository.findByProveedorIdOrderByFechaDesc(2L)).thenReturn(List.of(compra));
 
         List<MovimientoDTO> resultado = movimientoService.listarCompras(2L);
@@ -163,6 +168,56 @@ class MovimientoServiceTest {
 
         assertThat(movimientoService.listarCompras(null)).isEmpty();
         verify(movimientoRepository).findByProveedorIdIsNotNullOrderByFechaDesc();
+    }
+
+    @Test
+    void registrarVentaGuardaLosDatosDelCliente() {
+        Cliente cliente = new Cliente(5L, "Maria Rojas", "12.345.678-5", "Los Aromos 123, Maipu", "+56 9 1234 5678",
+                true);
+        BalonDTO balon = new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 10, 2);
+        when(clienteRepository.findById(5L)).thenReturn(java.util.Optional.of(cliente));
+        when(balonClienteResiliente.obtenerPorCodigo("BAL-5")).thenReturn(balon);
+        simularGuardado(11L);
+
+        MovimientoDTO resultado = movimientoService.registrar(
+                new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 2, "Ana", null, 5L));
+
+        assertThat(resultado.clienteId()).isEqualTo(5L);
+        assertThat(resultado.clienteNombre()).isEqualTo("Maria Rojas");
+        assertThat(resultado.clienteDireccion()).isEqualTo("Los Aromos 123, Maipu");
+    }
+
+    @Test
+    void registrarVentaRechazaUnClienteDesactivado() {
+        Cliente inactivo = new Cliente(6L, "Pedro Soto", "9.876.543-2", "Calle 2", "123", false);
+        when(clienteRepository.findById(6L)).thenReturn(java.util.Optional.of(inactivo));
+
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 1, "Ana", null, 6L);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> movimientoService.registrar(request));
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        verify(publicador, never()).publicar(any());
+    }
+
+    @Test
+    void registrarVentaRechazaUnClienteInexistente() {
+        when(clienteRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.SALIDA, "BAL-5", 1, "Ana", null, 99L);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> movimientoService.registrar(request));
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void registrarEntradaConClienteEsInvalido() {
+        MovimientoRequestDTO request = new MovimientoRequestDTO(TipoMovimiento.ENTRADA, "BAL-5", 1, "Ana", null, 5L);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> movimientoService.registrar(request));
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     private void simularGuardado(Long id) {

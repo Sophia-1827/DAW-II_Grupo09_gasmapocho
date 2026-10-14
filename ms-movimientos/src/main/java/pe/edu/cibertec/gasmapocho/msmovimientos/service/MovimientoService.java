@@ -16,8 +16,10 @@ import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.ProveedorDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.messaging.MovimientoEvento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.messaging.MovimientoPublicador;
+import pe.edu.cibertec.gasmapocho.msmovimientos.model.Cliente;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.Movimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.TipoMovimiento;
+import pe.edu.cibertec.gasmapocho.msmovimientos.repository.ClienteRepository;
 import pe.edu.cibertec.gasmapocho.msmovimientos.repository.MovimientoRepository;
 
 import feign.FeignException;
@@ -26,13 +28,16 @@ import feign.FeignException;
 public class MovimientoService {
 
     private final MovimientoRepository movimientoRepository;
+    private final ClienteRepository clienteRepository;
     private final BalonClienteResiliente balonClienteResiliente;
     private final ProveedorClienteResiliente proveedorClienteResiliente;
     private final MovimientoPublicador publicador;
 
-    public MovimientoService(MovimientoRepository movimientoRepository, BalonClienteResiliente balonClienteResiliente,
-            ProveedorClienteResiliente proveedorClienteResiliente, MovimientoPublicador publicador) {
+    public MovimientoService(MovimientoRepository movimientoRepository, ClienteRepository clienteRepository,
+            BalonClienteResiliente balonClienteResiliente, ProveedorClienteResiliente proveedorClienteResiliente,
+            MovimientoPublicador publicador) {
         this.movimientoRepository = movimientoRepository;
+        this.clienteRepository = clienteRepository;
         this.balonClienteResiliente = balonClienteResiliente;
         this.proveedorClienteResiliente = proveedorClienteResiliente;
         this.publicador = publicador;
@@ -50,6 +55,7 @@ public class MovimientoService {
     }
 
     public MovimientoDTO registrar(MovimientoRequestDTO request) {
+        Cliente cliente = buscarClienteParaVenta(request);
         BalonDTO balon = buscarBalonOLanzar(request.balonCodigo());
 
         if (request.tipo() == TipoMovimiento.SALIDA && balon.stock() < request.cantidad()) {
@@ -59,7 +65,31 @@ public class MovimientoService {
 
         Movimiento movimiento = nuevoMovimiento(balon, request.tipo(), request.cantidad(), balon.precio(),
                 request.responsable(), request.observacion());
+        if (cliente != null) {
+            movimiento.setClienteId(cliente.getId());
+            movimiento.setClienteNombre(cliente.getNombre());
+            movimiento.setClienteDireccion(cliente.getDireccion());
+        }
         return guardarYPublicar(movimiento);
+    }
+
+    // El cliente es opcional y solo aplica a ventas (SALIDA); debe existir y estar activo.
+    private Cliente buscarClienteParaVenta(MovimientoRequestDTO request) {
+        if (request.clienteId() == null) {
+            return null;
+        }
+        if (request.tipo() != TipoMovimiento.SALIDA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El cliente solo se asocia a ventas (SALIDA)");
+        }
+        Cliente cliente = clienteRepository.findById(request.clienteId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Cliente no encontrado: " + request.clienteId()));
+        if (!Boolean.TRUE.equals(cliente.getActivo())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El cliente " + cliente.getNombre() + " esta desactivado");
+        }
+        return cliente;
     }
 
     // Compra a proveedor: una ENTRADA asociada a un proveedor activo. El costo es opcional;
@@ -126,6 +156,7 @@ public class MovimientoService {
     private MovimientoDTO toDTO(Movimiento m) {
         return new MovimientoDTO(m.getId(), m.getFolio(), m.getTipo(), m.getBalonCodigo(), m.getBalonNombre(),
                 m.getCantidad(), m.getPrecioUnitario(), m.getResponsable(), m.getObservacion(), m.getFecha(),
-                m.getProveedorId(), m.getProveedorNombre());
+                m.getProveedorId(), m.getProveedorNombre(), m.getClienteId(), m.getClienteNombre(),
+                m.getClienteDireccion());
     }
 }
