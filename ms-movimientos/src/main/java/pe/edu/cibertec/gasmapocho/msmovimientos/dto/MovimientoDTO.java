@@ -2,6 +2,7 @@ package pe.edu.cibertec.gasmapocho.msmovimientos.dto;
 
 import java.time.LocalDateTime;
 
+import pe.edu.cibertec.gasmapocho.msmovimientos.model.EstadoMovimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.TipoMovimiento;
 
 public record MovimientoDTO(
@@ -19,5 +20,6 @@ public record MovimientoDTO(
         String proveedorNombre,
         Long clienteId,
         String clienteNombre,
-        String clienteDireccion) {
+        String clienteDireccion,
+        EstadoMovimiento estado) {
 }

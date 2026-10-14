@@ -18,6 +18,9 @@ import pe.edu.cibertec.gasmapocho.msreportes.dto.StockActualItemDTO;
 @Service
 public class ReporteService {
 
+    // Un movimiento anulado ya no afecta el stock, asi que no cuenta en los reportes.
+    private static final String ANULADO = "ANULADO";
+
     private final BalonClient balonClient;
     private final MovimientoClient movimientoClient;
 
@@ -36,6 +39,7 @@ public class ReporteService {
     public List<MovimientoDTO> movimientosDia() {
         LocalDate hoy = LocalDate.now();
         return movimientoClient.listar().stream()
+                .filter(m -> !ANULADO.equals(m.estado()))
                 .filter(m -> m.fecha().toLocalDate().isEqual(hoy))
                 .sorted(Comparator.comparing(MovimientoDTO::fecha).reversed())
                 .toList();
@@ -45,6 +49,7 @@ public class ReporteService {
         LocalDate ahora = LocalDate.now();
         List<BalonDTO> balones = balonClient.listar();
         List<MovimientoDTO> movimientosDelMes = movimientoClient.listar().stream()
+                .filter(m -> !ANULADO.equals(m.estado()))
                 .filter(m -> m.fecha().getYear() == ahora.getYear() && m.fecha().getMonthValue() == ahora.getMonthValue())
                 .toList();
 

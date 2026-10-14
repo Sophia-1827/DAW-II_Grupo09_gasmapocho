@@ -12,5 +12,6 @@ public record MovimientoDTO(
         Double precioUnitario,
         String responsable,
         String observacion,
-        LocalDateTime fecha) {
+        LocalDateTime fecha,
+        String estado) {
 }

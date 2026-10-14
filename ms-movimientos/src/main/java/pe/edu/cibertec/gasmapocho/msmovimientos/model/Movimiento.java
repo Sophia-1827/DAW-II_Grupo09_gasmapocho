@@ -72,4 +72,9 @@ public class Movimiento {
 
     @Column(name = "cliente_direccion", length = 150)
     private String clienteDireccion;
+
+    // El default de columna permite agregar el campo a una tabla que ya tiene movimientos.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15, columnDefinition = "varchar(15) default 'REGISTRADO'")
+    private EstadoMovimiento estado = EstadoMovimiento.REGISTRADO;
 }

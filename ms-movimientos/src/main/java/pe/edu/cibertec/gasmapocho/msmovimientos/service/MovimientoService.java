@@ -12,11 +12,13 @@ import pe.edu.cibertec.gasmapocho.msmovimientos.client.ProveedorClienteResilient
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.BalonDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.CompraRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoDTO;
+import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoEdicionDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.ProveedorDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.messaging.MovimientoEvento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.messaging.MovimientoPublicador;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.Cliente;
+import pe.edu.cibertec.gasmapocho.msmovimientos.model.EstadoMovimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.Movimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.model.TipoMovimiento;
 import pe.edu.cibertec.gasmapocho.msmovimientos.repository.ClienteRepository;
@@ -110,6 +112,85 @@ public class MovimientoService {
         return guardarYPublicar(movimiento);
     }
 
+    // Solo un movimiento REGISTRADO se edita. Si cambia la cantidad, el stock se corrige con la diferencia.
+    public MovimientoDTO editar(Long id, MovimientoEdicionDTO request) {
+        Movimiento movimiento = buscarOLanzar(id);
+        if (movimiento.getEstado() != EstadoMovimiento.REGISTRADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Solo se puede editar un movimiento REGISTRADO, este esta " + movimiento.getEstado());
+        }
+
+        int ajusteStock = efectoEnStock(movimiento.getTipo(), request.cantidad() - movimiento.getCantidad());
+        validarStockParaAjuste(movimiento, ajusteStock);
+
+        movimiento.setCantidad(request.cantidad());
+        movimiento.setResponsable(request.responsable().trim());
+        movimiento.setObservacion(request.observacion() != null ? request.observacion().trim() : null);
+        movimiento = movimientoRepository.save(movimiento);
+
+        publicarAjusteDeStock(movimiento, ajusteStock);
+        return toDTO(movimiento);
+    }
+
+    public MovimientoDTO confirmar(Long id) {
+        Movimiento movimiento = buscarOLanzar(id);
+        if (movimiento.getEstado() != EstadoMovimiento.REGISTRADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Solo se puede confirmar un movimiento REGISTRADO, este esta " + movimiento.getEstado());
+        }
+        movimiento.setEstado(EstadoMovimiento.CONFIRMADO);
+        return toDTO(movimientoRepository.save(movimiento));
+    }
+
+    // Anular no borra: deja el movimiento en el historial y revierte su efecto en el stock.
+    public MovimientoDTO anular(Long id) {
+        Movimiento movimiento = buscarOLanzar(id);
+        if (movimiento.getEstado() == EstadoMovimiento.ANULADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El movimiento ya esta anulado");
+        }
+
+        int ajusteStock = -efectoEnStock(movimiento.getTipo(), movimiento.getCantidad());
+        validarStockParaAjuste(movimiento, ajusteStock);
+
+        movimiento.setEstado(EstadoMovimiento.ANULADO);
+        movimiento = movimientoRepository.save(movimiento);
+
+        publicarAjusteDeStock(movimiento, ajusteStock);
+        return toDTO(movimiento);
+    }
+
+    // Unidades que el movimiento suma (ENTRADA) o resta (SALIDA) al stock del balon.
+    private int efectoEnStock(TipoMovimiento tipo, int unidades) {
+        return tipo == TipoMovimiento.ENTRADA ? unidades : -unidades;
+    }
+
+    // Un ajuste negativo no puede dejar el stock bajo cero.
+    private void validarStockParaAjuste(Movimiento movimiento, int ajusteStock) {
+        if (ajusteStock >= 0) {
+            return;
+        }
+        BalonDTO balon = buscarBalonOLanzar(movimiento.getBalonCodigo());
+        if (balon.stock() < -ajusteStock) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Stock insuficiente para el ajuste: hay " + balon.stock() + " unidades de " + balon.codigo());
+        }
+    }
+
+    // Reutiliza el mismo evento ENTRADA/SALIDA que ya consume ms-balones: un ajuste positivo se
+    // publica como ENTRADA y uno negativo como SALIDA.
+    private void publicarAjusteDeStock(Movimiento movimiento, int ajusteStock) {
+        if (ajusteStock == 0) {
+            return;
+        }
+        TipoMovimiento tipo = ajusteStock > 0 ? TipoMovimiento.ENTRADA : TipoMovimiento.SALIDA;
+        publicador.publicar(new MovimientoEvento(movimiento.getBalonCodigo(), tipo.name(), Math.abs(ajusteStock)));
+    }
+
+    private Movimiento buscarOLanzar(Long id) {
+        return movimientoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movimiento no encontrado"));
+    }
+
     private Movimiento nuevoMovimiento(BalonDTO balon, TipoMovimiento tipo, Integer cantidad, Double precio,
             String responsable, String observacion) {
         Movimiento movimiento = new Movimiento();
@@ -157,6 +238,6 @@ public class MovimientoService {
         return new MovimientoDTO(m.getId(), m.getFolio(), m.getTipo(), m.getBalonCodigo(), m.getBalonNombre(),
                 m.getCantidad(), m.getPrecioUnitario(), m.getResponsable(), m.getObservacion(), m.getFecha(),
                 m.getProveedorId(), m.getProveedorNombre(), m.getClienteId(), m.getClienteNombre(),
-                m.getClienteDireccion());
+                m.getClienteDireccion(), m.getEstado());
     }
 }

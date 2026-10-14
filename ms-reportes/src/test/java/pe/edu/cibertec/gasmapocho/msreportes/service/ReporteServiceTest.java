@@ -49,8 +49,8 @@ class ReporteServiceTest {
         LocalDateTime hoy = LocalDateTime.now();
         LocalDateTime ayer = hoy.minusDays(1);
         when(movimientoClient.listar()).thenReturn(List.of(
-                new MovimientoDTO(1L, "MOV-00001", "ENTRADA", "BAL-5", "Balon 5 kg", 10, 14500.0, "Juan", null, hoy),
-                new MovimientoDTO(2L, "MOV-00002", "SALIDA", "BAL-11", "Balon 11 kg", 3, 21000.0, "Ana", null, ayer)));
+                new MovimientoDTO(1L, "MOV-00001", "ENTRADA", "BAL-5", "Balon 5 kg", 10, 14500.0, "Juan", null, hoy, "REGISTRADO"),
+                new MovimientoDTO(2L, "MOV-00002", "SALIDA", "BAL-11", "Balon 11 kg", 3, 21000.0, "Ana", null, ayer, "REGISTRADO")));
 
         List<MovimientoDTO> resultado = reporteService.movimientosDia();
 
@@ -59,12 +59,26 @@ class ReporteServiceTest {
     }
 
     @Test
+    void losMovimientosAnuladosNoCuentanEnLosReportes() {
+        LocalDateTime hoy = LocalDateTime.now();
+        when(balonClient.listar()).thenReturn(List.of(new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 40, 10)));
+        when(movimientoClient.listar()).thenReturn(List.of(
+                new MovimientoDTO(1L, "MOV-00001", "ENTRADA", "BAL-5", "Balon 5 kg", 20, 14500.0, "Juan", null, hoy, "CONFIRMADO"),
+                new MovimientoDTO(2L, "MOV-00002", "SALIDA", "BAL-5", "Balon 5 kg", 5, 14500.0, "Ana", null, hoy, "ANULADO")));
+
+        assertThat(reporteService.movimientosDia()).extracting(MovimientoDTO::folio).containsExactly("MOV-00001");
+        ConsolidadoBalonDTO c = reporteService.consolidadoMensual().get(0);
+        assertThat(c.totalSalidas()).isZero();
+        assertThat(c.montoVentas()).isZero();
+    }
+
+    @Test
     void consolidadoMensualSumaEntradasYSalidasPorBalon() {
         LocalDateTime hoy = LocalDateTime.now();
         when(balonClient.listar()).thenReturn(List.of(new BalonDTO(1L, "BAL-5", "Balon 5 kg", 14500.0, 40, 10)));
         when(movimientoClient.listar()).thenReturn(List.of(
-                new MovimientoDTO(1L, "MOV-00001", "ENTRADA", "BAL-5", "Balon 5 kg", 20, 14500.0, "Juan", null, hoy),
-                new MovimientoDTO(2L, "MOV-00002", "SALIDA", "BAL-5", "Balon 5 kg", 5, 14500.0, "Ana", null, hoy)));
+                new MovimientoDTO(1L, "MOV-00001", "ENTRADA", "BAL-5", "Balon 5 kg", 20, 14500.0, "Juan", null, hoy, "REGISTRADO"),
+                new MovimientoDTO(2L, "MOV-00002", "SALIDA", "BAL-5", "Balon 5 kg", 5, 14500.0, "Ana", null, hoy, "REGISTRADO")));
 
         List<ConsolidadoBalonDTO> resultado = reporteService.consolidadoMensual();
 
