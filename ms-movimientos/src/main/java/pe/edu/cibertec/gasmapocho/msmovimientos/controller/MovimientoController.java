@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import pe.edu.cibertec.gasmapocho.msmovimientos.dto.CompraRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.dto.MovimientoRequestDTO;
 import pe.edu.cibertec.gasmapocho.msmovimientos.service.MovimientoService;
@@ -33,5 +35,16 @@ public class MovimientoController {
     @PostMapping
     public MovimientoDTO registrar(@Valid @RequestBody MovimientoRequestDTO request) {
         return movimientoService.registrar(request);
+    }
+
+    // Historial de compras a proveedores; opcionalmente filtrado por un proveedor.
+    @GetMapping("/compras")
+    public List<MovimientoDTO> listarCompras(@RequestParam(required = false) Long proveedorId) {
+        return movimientoService.listarCompras(proveedorId);
+    }
+
+    @PostMapping("/compras")
+    public MovimientoDTO registrarCompra(@Valid @RequestBody CompraRequestDTO request) {
+        return movimientoService.registrarCompra(request);
     }
 }

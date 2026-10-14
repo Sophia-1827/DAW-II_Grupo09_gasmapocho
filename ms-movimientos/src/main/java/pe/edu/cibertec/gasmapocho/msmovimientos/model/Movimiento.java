@@ -54,4 +54,11 @@ public class Movimiento {
 
     @Column(nullable = false)
     private LocalDateTime fecha;
+
+    // Solo las compras a proveedor los llenan; las ventas y ajustes quedan en null.
+    @Column(name = "proveedor_id")
+    private Long proveedorId;
+
+    @Column(name = "proveedor_nombre", length = 100)
+    private String proveedorNombre;
 }
