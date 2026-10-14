@@ -27,7 +27,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
-        return new User(usuario.getEmail(), usuario.getPasswordHash(), getAuthorities(usuario.getRol()));
+        // enabled=false hace que DaoAuthenticationProvider rechace el login de un usuario desactivado.
+        return new User(usuario.getEmail(), usuario.getPasswordHash(), usuario.getActivo(), true, true, true,
+                getAuthorities(usuario.getRol()));
     }
 
     public List<GrantedAuthority> getAuthorities(Rol rol) {

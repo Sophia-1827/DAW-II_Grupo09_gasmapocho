@@ -55,6 +55,16 @@ public class UsuarioService {
         return toDTO(usuarioRepository.save(usuario));
     }
 
+    // Alterna activo/inactivo. Un ADMIN no puede desactivarse a si mismo para no quedarse sin acceso.
+    public UsuarioDTO cambiarEstado(Long id, String emailActual) {
+        Usuario usuario = buscarOLanzar(id);
+        if (usuario.getEmail().equalsIgnoreCase(emailActual)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No puedes desactivar tu propia cuenta");
+        }
+        usuario.setActivo(!usuario.getActivo());
+        return toDTO(usuarioRepository.save(usuario));
+    }
+
     public void eliminar(Long id) {
         Usuario usuario = buscarOLanzar(id);
         usuarioRepository.delete(usuario);
@@ -66,6 +76,7 @@ public class UsuarioService {
     }
 
     private UsuarioDTO toDTO(Usuario usuario) {
-        return new UsuarioDTO(usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getRol());
+        return new UsuarioDTO(usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getRol(),
+                usuario.getActivo());
     }
 }

@@ -25,8 +25,8 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
         usuarioRepository.save(new Usuario(null, "Administrador Gas Mapocho", "admin@gasmapocho.cl",
-                passwordEncoder.encode("Admin123"), Rol.ADMIN));
+                passwordEncoder.encode("Admin123"), Rol.ADMIN, true));
         usuarioRepository.save(new Usuario(null, "Personal de Almacen", "almacen@gasmapocho.cl",
-                passwordEncoder.encode("Almacen123"), Rol.ALMACEN));
+                passwordEncoder.encode("Almacen123"), Rol.ALMACEN, true));
     }
 }

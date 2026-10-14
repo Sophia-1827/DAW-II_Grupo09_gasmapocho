@@ -37,4 +37,9 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Rol rol;
+
+    // Un usuario desactivado no puede iniciar sesion. El default de columna permite agregar el campo
+    // a una tabla que ya tiene usuarios (todos quedan activos).
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private Boolean activo = true;
 }

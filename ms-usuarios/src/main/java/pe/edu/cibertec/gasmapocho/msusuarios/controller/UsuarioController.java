@@ -5,8 +5,10 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -49,6 +51,11 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public UsuarioDTO actualizar(@PathVariable Long id, @Valid @RequestBody UsuarioUpdateDTO request) {
         return usuarioService.actualizar(id, request);
+    }
+
+    @PatchMapping("/{id}/estado")
+    public UsuarioDTO cambiarEstado(@PathVariable Long id, Authentication authentication) {
+        return usuarioService.cambiarEstado(id, authentication.getName());
     }
 
     @DeleteMapping("/{id}")

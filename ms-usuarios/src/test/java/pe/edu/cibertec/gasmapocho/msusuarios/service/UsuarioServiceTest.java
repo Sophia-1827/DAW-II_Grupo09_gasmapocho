@@ -37,8 +37,8 @@ class UsuarioServiceTest {
 
     @Test
     void listarDevuelveTodosLosUsuarios() {
-        Usuario u1 = new Usuario(1L, "Admin", "admin@gasmapocho.cl", "hash1", Rol.ADMIN);
-        Usuario u2 = new Usuario(2L, "Almacen", "almacen@gasmapocho.cl", "hash2", Rol.ALMACEN);
+        Usuario u1 = new Usuario(1L, "Admin", "admin@gasmapocho.cl", "hash1", Rol.ADMIN, true);
+        Usuario u2 = new Usuario(2L, "Almacen", "almacen@gasmapocho.cl", "hash2", Rol.ALMACEN, true);
         when(usuarioRepository.findAll()).thenReturn(List.of(u1, u2));
 
         List<UsuarioDTO> resultado = usuarioService.listar();
@@ -68,7 +68,7 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarModificaLosDatosDelUsuarioExistente() {
-        Usuario existente = new Usuario(5L, "Viejo Nombre", "viejo@gasmapocho.cl", "hash", Rol.ALMACEN);
+        Usuario existente = new Usuario(5L, "Viejo Nombre", "viejo@gasmapocho.cl", "hash", Rol.ALMACEN, true);
         when(usuarioRepository.findById(5L)).thenReturn(Optional.of(existente));
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -82,7 +82,7 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarCambiaElPasswordSoloSiVieneInformado() {
-        Usuario existente = new Usuario(6L, "Alguien", "alguien@gasmapocho.cl", "hash-viejo", Rol.ALMACEN);
+        Usuario existente = new Usuario(6L, "Alguien", "alguien@gasmapocho.cl", "hash-viejo", Rol.ALMACEN, true);
         when(usuarioRepository.findById(6L)).thenReturn(Optional.of(existente));
         when(passwordEncoder.encode("NuevaClave123")).thenReturn("hash-nuevo");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -95,12 +95,52 @@ class UsuarioServiceTest {
 
     @Test
     void eliminarBorraElUsuarioExistente() {
-        Usuario existente = new Usuario(7L, "Alguien", "alguien@gasmapocho.cl", "hash", Rol.ALMACEN);
+        Usuario existente = new Usuario(7L, "Alguien", "alguien@gasmapocho.cl", "hash", Rol.ALMACEN, true);
         when(usuarioRepository.findById(7L)).thenReturn(Optional.of(existente));
 
         usuarioService.eliminar(7L);
 
         verify(usuarioRepository).delete(existente);
+    }
+
+    @Test
+    void cambiarEstadoDesactivaUnUsuarioActivo() {
+        Usuario existente = new Usuario(8L, "Alguien", "alguien@gasmapocho.cl", "hash", Rol.ALMACEN, true);
+        when(usuarioRepository.findById(8L)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioDTO resultado = usuarioService.cambiarEstado(8L, "admin@gasmapocho.cl");
+
+        assertThat(resultado.activo()).isFalse();
+    }
+
+    @Test
+    void cambiarEstadoReactivaUnUsuarioDesactivado() {
+        Usuario existente = new Usuario(8L, "Alguien", "alguien@gasmapocho.cl", "hash", Rol.ALMACEN, false);
+        when(usuarioRepository.findById(8L)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(usuarioService.cambiarEstado(8L, "admin@gasmapocho.cl").activo()).isTrue();
+    }
+
+    @Test
+    void cambiarEstadoNoPermiteDesactivarLaPropiaCuenta() {
+        Usuario admin = new Usuario(1L, "Admin", "admin@gasmapocho.cl", "hash", Rol.ADMIN, true);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(admin));
+
+        ResponseStatusException ex = org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                () -> usuarioService.cambiarEstado(1L, "ADMIN@gasmapocho.cl"));
+
+        assertThat(ex.getStatusCode()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+        assertThat(admin.getActivo()).isTrue();
+    }
+
+    @Test
+    void cambiarEstadoLanza404SiElUsuarioNoExiste() {
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(ResponseStatusException.class,
+                () -> usuarioService.cambiarEstado(99L, "admin@gasmapocho.cl"));
     }
 
     @Test
